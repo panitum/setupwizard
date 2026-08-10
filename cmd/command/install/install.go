@@ -44,12 +44,25 @@ func install() {
 		os.Exit(1)
 	}
 
+	downloadApps(cfg.Apps)
+}
+
+func downloadApps(apps []config.App) {
 	p := mpb.New(mpb.WithWidth(60), mpb.WithRefreshRate(180*time.Millisecond))
 
 	var wg sync.WaitGroup
-	for _, app := range cfg.Apps {
+	sem := make(chan struct{}, 3)
+
+	for _, app := range apps {
 		wg.Add(1)
-		go download.File(app.Link, p, &wg)
+		sem <- struct{}{}
+
+		go func() {
+			defer wg.Done()
+			defer func() { <-sem }()
+
+			download.File(app.Link, p)
+		}()
 	}
 
 	wg.Wait()

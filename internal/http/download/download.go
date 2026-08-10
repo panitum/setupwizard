@@ -6,15 +6,12 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"sync"
 
 	"github.com/vbauerster/mpb/v8"
 	"github.com/vbauerster/mpb/v8/decor"
 )
 
-func File(url string, p *mpb.Progress, wg *sync.WaitGroup) {
-	defer wg.Done()
-
+func File(url string, p *mpb.Progress) {
 	fileName := filepath.Base(url)
 	destination := getDestination(fileName)
 
