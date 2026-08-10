@@ -3,8 +3,10 @@ package download
 import (
 	"fmt"
 	"io"
+	"mime"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 
 	"github.com/vbauerster/mpb/v8"
@@ -12,14 +14,6 @@ import (
 )
 
 func File(url string, p *mpb.Progress) {
-	fileName := filepath.Base(url)
-	destination := getDestination(fileName)
-
-	if err := os.MkdirAll(filepath.Dir(destination), os.ModePerm); err != nil {
-		fmt.Printf("Failed to create directory %s: %s\n", filepath.Dir(destination), err)
-		return
-	}
-
 	resp, err := http.Get(url)
 	if err != nil {
 		fmt.Println("Request error:", url, err)
@@ -29,6 +23,14 @@ func File(url string, p *mpb.Progress) {
 
 	if resp.StatusCode != http.StatusOK {
 		fmt.Println("Bad status:", url, resp.Status)
+		return
+	}
+
+	fileName := fetchFileName(resp)
+	destination := getDestination(fileName)
+
+	if err := os.MkdirAll(filepath.Dir(destination), os.ModePerm); err != nil {
+		fmt.Printf("Failed to create directory %s: %s\n", filepath.Dir(destination), err)
 		return
 	}
 
@@ -60,6 +62,19 @@ func File(url string, p *mpb.Progress) {
 	if err != nil {
 		fmt.Println("Ошибка копирования:", err)
 	}
+}
+
+func fetchFileName(resp *http.Response) string {
+	if cd := resp.Header.Get("Content-Disposition"); cd != "" {
+		_, params, err := mime.ParseMediaType(cd)
+		if err == nil {
+			if fn, ok := params["filename"]; ok {
+				return fn
+			}
+		}
+	}
+
+	return path.Base(resp.Request.URL.Path)
 }
 
 func getDestination(fileName string) string {
