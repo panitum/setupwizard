@@ -1,28 +1,14 @@
 package config
 
 import (
-	"strconv"
-
 	"github.com/spf13/cobra"
 )
 
-var configCmd = &cobra.Command{
+var ConfigCmd = &cobra.Command{
 	Use:   "config",
-	Short: "Config actions.",
-}
-
-func GetCmd() *cobra.Command {
-	return configCmd
+	Short: "Config actions",
 }
 
 func init() {
-	configCmd.AddCommand(generateCmd)
-
-	generateLong()
-}
-
-func generateLong() {
-	for i, command := range configCmd.Commands() {
-		configCmd.Long += strconv.Itoa(i+1) + ". " + command.Use + " — " + command.Short + "\n"
-	}
+	ConfigCmd.AddCommand(generateCmd)
 }
