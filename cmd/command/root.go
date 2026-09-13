@@ -3,9 +3,10 @@ package command
 import (
 	"os"
 	"setupwizard/cmd/command/config"
+	"setupwizard/cmd/command/custom"
 	"setupwizard/cmd/command/install"
 	cfg "setupwizard/internal/config"
-	"setupwizard/internal/custom"
+	customPkg "setupwizard/internal/custom"
 
 	"github.com/spf13/cobra"
 )
@@ -23,7 +24,7 @@ func Execute() {
 }
 
 func init() {
-	if err := custom.Init(); err != nil {
+	if err := customPkg.Init(); err != nil {
 		panic(err)
 	}
 
@@ -32,4 +33,6 @@ func init() {
 	if cfg.IsExist() {
 		rootCmd.AddCommand(install.InstallCmd)
 	}
+
+	rootCmd.AddCommand(custom.CustomCmd)
 }
