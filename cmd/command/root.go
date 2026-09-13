@@ -5,6 +5,7 @@ import (
 	"setupwizard/cmd/command/config"
 	"setupwizard/cmd/command/install"
 	cfg "setupwizard/internal/config"
+	"setupwizard/internal/custom"
 
 	"github.com/spf13/cobra"
 )
@@ -22,6 +23,10 @@ func Execute() {
 }
 
 func init() {
+	if err := custom.Init(); err != nil {
+		panic(err)
+	}
+
 	rootCmd.AddCommand(config.ConfigCmd)
 
 	if cfg.IsExist() {
