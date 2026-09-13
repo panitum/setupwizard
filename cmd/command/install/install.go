@@ -15,7 +15,7 @@ import (
 var InstallCmd = &cobra.Command{
 	Use:     "install",
 	Aliases: []string{"i"},
-	Short:   "Let's set up your computer",
+	Short:   "Downloading apps from the config",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("Installation has been started.")
 		install()

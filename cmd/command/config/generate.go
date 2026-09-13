@@ -12,7 +12,7 @@ import (
 var generateCmd = &cobra.Command{
 	Use:     "generate",
 	Aliases: []string{"gen"},
-	Short:   "Config actions.",
+	Short:   "Generating empty config file",
 	Run: func(cmd *cobra.Command, args []string) {
 		generateConfig()
 	},
