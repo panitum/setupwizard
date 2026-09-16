@@ -11,26 +11,27 @@ var CustomCmd = &cobra.Command{
 	Use:   "custom",
 	Short: "Executing custom .sh-scripts",
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := executeCustomCommands(); err != nil {
-			panic(err)
-		}
+		executeCustomCommands()
 	},
 }
 
-func executeCustomCommands() error {
+func executeCustomCommands() {
 	scripts, err := customPkg.NewCustom()
 	if err != nil {
-		return err
+		fmt.Println(err)
+		return
 	}
 
 	if scripts.Count() < 1 {
 		fmt.Println("No custom scripts found.")
-		return nil
+		return
 	}
 
-	if err := scripts.Execute(); err != nil {
-		return err
+	for _, script := range scripts.GetScripts() {
+		err := customPkg.RunScript(script)
+		if err != nil {
+			fmt.Printf("\n[Ошибка выполнения sh-скрипта]: %v\n", err)
+			return
+		}
 	}
-
-	return nil
 }

@@ -1,7 +1,6 @@
 package custom
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -34,7 +33,7 @@ func (c *Custom) Count() int {
 
 func (c *Custom) Execute() error {
 	for _, script := range c.scripts {
-		if err := runScript(script); err != nil {
+		if err := RunScript(script); err != nil {
 			return err
 		}
 	}
@@ -71,25 +70,26 @@ func Init() error {
 	return ensureDir()
 }
 
-func ensureDir() error {
-	dirPath := filepath.Join(root)
-	if err := os.MkdirAll(dirPath, 0755); err != nil {
+func RunScript(script string) error {
+	cmd := exec.Command("sh", script)
+
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+
+	err := cmd.Run()
+	if err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func runScript(script string) error {
-	cmd := exec.Command("sh", script)
-
-	output, err := cmd.CombinedOutput()
-	if err != nil {
+func ensureDir() error {
+	dirPath := filepath.Join(root)
+	if err := os.MkdirAll(dirPath, 0755); err != nil {
 		return err
 	}
-
-	fmt.Printf("%v: Результат выполнения:\n", script)
-	fmt.Println(string(output))
 
 	return nil
 }
