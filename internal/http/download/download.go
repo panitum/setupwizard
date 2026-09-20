@@ -15,7 +15,7 @@ import (
 	"github.com/vbauerster/mpb/v8/decor"
 )
 
-const stallTimeout = 2 * time.Second
+const stallTimeout = 15 * time.Second
 
 type stallReader struct {
 	r     io.ReadCloser
