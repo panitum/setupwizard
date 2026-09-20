@@ -2,6 +2,8 @@ package download
 
 import (
 	"context"
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"mime"
@@ -9,6 +11,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/vbauerster/mpb/v8"
@@ -62,6 +65,22 @@ func File(url string, p *mpb.Progress) {
 	fileName := fetchFileName(resp)
 	destination := getDestination(fileName)
 
+	if alreadyDownloaded(destination, resp) {
+		resp.Body.Close()
+
+		bar := p.AddBar(resp.ContentLength,
+			mpb.BarFillerClearOnComplete(),
+			mpb.PrependDecorators(
+				decor.Name(fileName, decor.WC{W: len(fileName) + 1, C: decor.DindentRight}),
+				decor.OnComplete(decor.Name(""), "уже скачано"),
+			),
+		)
+		bar.SetCurrent(resp.ContentLength)
+		bar.Wait()
+
+		return
+	}
+
 	if err := os.MkdirAll(filepath.Dir(destination), os.ModePerm); err != nil {
 		fmt.Printf("Failed to create directory %s: %s\n", filepath.Dir(destination), err)
 		return
@@ -75,6 +94,15 @@ func File(url string, p *mpb.Progress) {
 	defer out.Close()
 
 	total := resp.ContentLength
+
+	tmp := destination + ".part"
+
+	out, err = os.Create(tmp)
+	if err != nil {
+		fmt.Println("Error creating temp file:", err)
+		return
+	}
+	defer out.Close()
 
 	bar := p.AddBar(total,
 		mpb.PrependDecorators(
@@ -99,6 +127,19 @@ func File(url string, p *mpb.Progress) {
 		out.Close()
 		os.Remove(destination)
 	}
+
+	if _, err := io.Copy(out, reader); err != nil {
+		bar.Abort(false)
+		out.Close()
+		os.Remove(tmp)
+		return
+	}
+
+	out.Close()
+	if err := os.Rename(tmp, destination); err != nil {
+		bar.Abort(false)
+		return
+	}
 }
 
 func fetchFileName(resp *http.Response) string {
@@ -116,4 +157,51 @@ func fetchFileName(resp *http.Response) string {
 
 func getDestination(fileName string) string {
 	return filepath.Join("downloads", fileName)
+}
+
+func alreadyDownloaded(destination string, resp *http.Response) bool {
+	fi, err := os.Stat(destination)
+	if err != nil {
+		return false
+	}
+
+	if resp.ContentLength < 0 {
+		return false
+	}
+	if fi.Size() != resp.ContentLength {
+		return false
+	}
+
+	if sum, ok := etagMD5(resp.Header.Get("ETag")); ok {
+		local, err := fileMD5(destination)
+		if err != nil || local != sum {
+			return false
+		}
+	}
+	return true
+}
+
+func etagMD5(etag string) (string, bool) {
+	etag = strings.Trim(etag, `"`)
+	if len(etag) != 32 || strings.Contains(etag, "-") {
+		return "", false
+	}
+	if _, err := hex.DecodeString(etag); err != nil {
+		return "", false
+	}
+	return strings.ToLower(etag), true
+}
+
+func fileMD5(p string) (string, error) {
+	f, err := os.Open(p)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	h := md5.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(h.Sum(nil)), nil
 }
