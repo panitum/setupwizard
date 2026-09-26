@@ -9,8 +9,10 @@ import (
 	"mime"
 	"net/http"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -126,6 +128,7 @@ func File(url string, p *mpb.Progress) {
 		bar.Abort(false)
 		out.Close()
 		os.Remove(destination)
+		return
 	}
 
 	if _, err := io.Copy(out, reader); err != nil {
@@ -138,6 +141,11 @@ func File(url string, p *mpb.Progress) {
 	out.Close()
 	if err := os.Rename(tmp, destination); err != nil {
 		bar.Abort(false)
+		return
+	}
+
+	if err := openFile(destination); err != nil {
+		fmt.Println("Failed to open file:", err)
 		return
 	}
 }
@@ -204,4 +212,19 @@ func fileMD5(p string) (string, error) {
 		return "", err
 	}
 	return hex.EncodeToString(h.Sum(nil)), nil
+}
+
+func openFile(path string) error {
+	var cmd *exec.Cmd
+
+	switch runtime.GOOS {
+	case "darwin":
+		cmd = exec.Command("open", path)
+	case "windows":
+		cmd = exec.Command("cmd", "/c", "start", "", path)
+	default:
+		cmd = exec.Command("xdg-open", path)
+	}
+
+	return cmd.Start()
 }
