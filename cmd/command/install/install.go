@@ -5,6 +5,7 @@ import (
 	"os"
 	"setupwizard/internal/config"
 	"setupwizard/internal/http/download"
+	"setupwizard/internal/snippets/idle"
 	"sync"
 	"time"
 
@@ -17,6 +18,14 @@ var InstallCmd = &cobra.Command{
 	Aliases: []string{"i"},
 	Short:   "Downloading apps from the config",
 	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println("Increasing idle timeout...")
+		err := idle.IncreaseIdleTimeout()
+		if err != nil {
+			fmt.Println(err)
+		} else {
+			fmt.Println("Success.")
+		}
+
 		fmt.Println("Installation has been started.")
 		install()
 		fmt.Println("Installation has been completed.")
