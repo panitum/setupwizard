@@ -9,14 +9,32 @@ import (
 const ErrUnsupportedOs = "unsupported os"
 
 func IncreaseIdleTimeout() error {
+	cmd, err := setIdleTimeout("180")
+	if err != nil {
+		return err
+	}
+
+	return cmd.Run()
+}
+
+func SetDefaultIdleTimeout() error {
+	cmd, err := setIdleTimeout("30")
+	if err != nil {
+		return err
+	}
+
+	return cmd.Run()
+}
+
+func setIdleTimeout(minutes string) (*exec.Cmd, error) {
 	var cmd *exec.Cmd
 
 	switch runtime.GOOS {
 	case "darwin":
-		cmd = exec.Command("sudo", "pmset", "-a", "displaysleep", "180")
+		cmd = exec.Command("sudo", "pmset", "-a", "displaysleep", minutes)
 	default:
-		return errors.New(ErrUnsupportedOs)
+		return nil, errors.New(ErrUnsupportedOs)
 	}
 
-	return cmd.Run()
+	return cmd, nil
 }

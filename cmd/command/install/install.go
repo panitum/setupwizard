@@ -29,6 +29,12 @@ var InstallCmd = &cobra.Command{
 		fmt.Println("Installation has been started.")
 		install()
 		fmt.Println("Installation has been completed.")
+
+		fmt.Println("Setting up default idle timeout...")
+		err = idle.SetDefaultIdleTimeout()
+		if err != nil {
+			fmt.Println(err)
+		}
 	},
 }
 
